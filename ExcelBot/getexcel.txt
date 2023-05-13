@@ -1,0 +1,102 @@
+import openai
+import pandas as pd
+import pyttsx3
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QMessageBox, QInputDialog
+
+# Set up the OpenAI API client with your API key
+openai.api_key = "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"
+
+# Set up the text-to-speech engine
+engine = pyttsx3.init()
+
+# Load the Excel file into a DataFrame
+df = pd.read_excel("Recruitment_Details.xlsx")
+
+class ExcelAssistant(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.initUI()
+
+    def initUI(self):
+        # Set up the window title and size
+        self.setWindowTitle("Excel Assistant")
+        self.setGeometry(100, 100, 400, 300)
+
+        # Set up the input and output fields
+        self.prompt_label = QLabel("You:")
+        self.prompt_input = QLineEdit()
+        self.answer_label = QLabel("AI says:")
+        self.answer_output = QLabel("")
+
+        # Set up the search button
+        self.search_button = QPushButton("Search")
+        self.search_button.clicked.connect(self.search_excel)
+
+        # Set up the stop button
+        self.stop_button = QPushButton("Stop")
+        self.stop_button.clicked.connect(self.stop_program)
+
+        # Set up the layout
+        vbox = QVBoxLayout()
+        hbox = QHBoxLayout()
+        hbox.addWidget(self.prompt_label)
+        hbox.addWidget(self.prompt_input)
+        vbox.addLayout(hbox)
+        vbox.addWidget(self.answer_label)
+        vbox.addWidget(self.answer_output)
+        hbox = QHBoxLayout()
+        hbox.addWidget(self.search_button)
+        hbox.addWidget(self.stop_button)
+        vbox.addLayout(hbox)
+        self.setLayout(vbox)
+
+        # Show the window
+        self.show()
+
+    def search_excel(self):
+        # Get the user's input
+        prompt = self.prompt_input.text()
+
+        # Check if the prompt contains the "search the excel" keyword
+        if "search the excel" in prompt.lower():
+            # Get the column to search in from the user's input
+            column, ok = QInputDialog.getText(self, "Excel Assistant", "What column do you want to search in?")
+            if ok:
+                column = column.lower()
+                print("You want to search in the", column, "column.")
+
+                # Get the value to search for from the user's input
+                value, ok = QInputDialog.getText(self, "Excel Assistant", "What value do you want to search for?")
+                if ok:
+                    value = value.lower()
+                    print("You want to search for", value, "in the", column, "column.")
+
+                    # Find the corresponding row in the Excel file
+                    row = df.loc[df[column].str.lower() == value]
+
+                    if not row.empty:
+                        # Get the column to return the value from from the user's input
+                        return_column, ok = QInputDialog.getText(self, "Excel Assistant", "What column do you want to get the value from?")
+                        if ok:
+                            return_column = return_column.lower()
+                            print("You want to get the value from the", return_column, "column.")
+
+                            # Extract the value from the row
+                            return_value = row[return_column].values[0]
+
+                            # Output the return value as spoken text
+                            answer = f"The {return_column} of the row where {column} is {value} is {return_value}."
+                            print("AI says:", answer)
+                            engine.say(answer)
+                            engine.runAndWait()
+
+                        else:
+                            # Output a message indicating that the user did not provide a column
+				    answer = "I'm sorry, I didn't understand which column you wanted to get the value from."
+				    print("AI says:", answer)
+				    engine.say(answer)
+				    engine.runAndWait()
+                           
+
+

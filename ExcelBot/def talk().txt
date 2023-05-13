@@ -1,0 +1,66 @@
+def talk():
+    # Output the greeting message as spoken text
+    greeting = "Hello, how can I assist you?"
+    print(greeting)
+    engine.say(greeting)
+    engine.runAndWait()
+
+    # Get input from the user
+    prompt = input("You: ")
+
+    # Check if the prompt contains the "search the excel" keyword
+    if "search the excel" in prompt.lower():
+        # Extract the search parameters from the prompt using regular expressions
+        search_params = re.findall(r'search the excel for (.*?) where (.*?) is (.*?)\.$', prompt.lower())
+        if len(search_params) == 1 and len(search_params[0]) == 3:
+            column, value = search_params[0][1], search_params[0][2]
+            print(f"You want to search for {value} in the {column} column.")
+
+            # Find the corresponding row in the Excel file
+            row = df.loc[df[column].str.lower() == value]
+
+            if not row.empty:
+                return_column = row.columns[0] # set default return column to the first column of the matching row
+                # Extract the return column from the prompt using regular expressions
+                return_column_match = re.search(r'return the (.*?)\?$', prompt.lower())
+                if return_column_match:
+                    return_column = return_column_match.group(1)
+                print(f"You want to get the value from the {return_column} column.")
+
+                # Extract the return value from the row
+                return_value = row[return_column].values[0]
+
+                # Output the return value as spoken text
+                answer = f"The {return_column} of the row where {column} is {value} is {return_value}."
+                print("AI says:", answer)
+                engine.say(answer)
+                engine.runAndWait()
+            else:
+                # Output a message indicating that the value was not found in the specified column
+                answer = f"I'm sorry, I could not find {value} in the {column} column."
+                print("AI says:", answer)
+                engine.say(answer)
+                engine.runAndWait()
+
+    elif "stop" in prompt.lower():
+        # Output a goodbye message and stop the program
+        answer = "Goodbye!"
+        print("AI says:", answer)
+        engine.say(answer)
+        engine.runAndWait()
+        return
+
+    else:
+        # Generate a response using the OpenAI API
+        response = openai.Completion.create(
+            engine="text-davinci-003",
+            prompt=prompt,
+            max_tokens=1024,
+            temperature=0.5,
+        )
+        answer = response.choices[0].text.strip()
+
+        # Output the response as spoken text
+        print("AI says:", answer)
+        engine.say(answer)
+        engine.runAndWait()

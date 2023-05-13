@@ -1,0 +1,135 @@
+import openai
+import pandas as pd
+import tkinter as tk
+import tkinter.scrolledtext as scrolledtext
+import speech_recognition as sr
+import threading
+from tkinter import messagebox
+
+# Set up the OpenAI API client with your API key
+openai.api_key = "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"
+
+# Load the Excel file live from google responses
+url = 'https://docs.google.com/spreadsheets/d/1On7Zf8Q5GD-0ReKGYndJNbLMbt_a4yEn8OqKjMXBeQ8/export?format=csv'
+
+df = pd.read_csv(url)
+
+# Create a function to generate a response from OpenAI
+def generate_response(prompt):
+    # Generate a response from OpenAI's GPT-3
+    response = openai.Completion.create(
+        engine="davinci", prompt=prompt, max_tokens=1024, n=1, stop=None, temperature=0.7,
+    )
+
+    # Extract the first choice from the response and return it
+    choice = response.choices[0].text
+    return choice.strip()
+
+# Create the GUI
+def create_gui():
+    # Define a function to handle voice input
+    def handle_voice_input():
+        # Create a recognizer object and set the microphone as the audio source
+        recognizer = sr.Recognizer()
+        with sr.Microphone() as source:
+            # Adjust for ambient noise
+            recognizer.adjust_for_ambient_noise(source)
+
+            # Show the mic is listening
+            mic_button.config(bg="red", text="Listening...")
+
+            # Listen for audio input and convert it to text
+            audio = recognizer.listen(source)
+            try:
+                text = recognizer.recognize_google(audio)
+                # Set the input text box to the recognized text
+                input_text_box.delete(1.0, tk.END)
+                input_text_box.insert(tk.END, text)
+            except sr.UnknownValueError:
+                # Show an error message if the speech cannot be recognized
+                messagebox.showerror("Error", "Could not understand audio input.")
+            # Show the mic is not listening anymore
+            mic_button.config(bg="white", text="🎤")
+
+    # Define a function to handle text input
+    def handle_text_input():
+        # Get the user's input from the input text box
+        prompt = input_text_box.get(1.0, tk.END).strip()
+
+        # Check if the prompt contains the "search the excel" keyword
+        if "search the excel" in prompt.lower():
+            response = ""
+            # Check if the Excel file has been loaded successfully
+            if isinstance(df, pd.DataFrame):
+                # Check if the prompt contains the "search the excel" keyword
+                while "search the excel" in prompt.lower() and "stop" not in prompt.lower():
+                    # Ask the user for the column to search in
+                    response += "AI says: What column do you want to search in?\n"
+                    chat_log.append(response)
+
+                    # Get the column to search in from the user's input
+                    column = get_user_input()
+                    response = f"You: {column}\n"
+
+                    # Check if the column exists in the dataframe
+                    if column.lower() in [col.lower() for col in df.columns]:
+                        # Ask the user for the value to search for
+                        response += "AI says: What value do you want to search for?\n"
+                        chat_log.append(response)
+
+                        # Get the value to search for from
+                        return_value = row[return_column].values[0]
+
+                        # Output the return value
+                        answer = f"The {return_column} of the row where {column} is {value} is ['{return_value}']."
+                        print("AI says:", answer)
+                        print("Results Found!")
+
+                        # Append the response to the chat log
+                        response = f"User: {prompt}\nAI: {answer}\n"
+                        chat_log.append(response)
+
+                    else:
+                        # Check if the specified column is present in the dataframe
+                        if column in df.columns:
+                            answer = f"I'm sorry, I could not find {value} in the {column} column."
+                        else:
+                            answer = "The column or the row is not present."
+                        print("AI says:", answer)
+                        print("Results Not Found!")
+
+                        # Append the response to the chat log
+                        response = f"User: {prompt}\nAI: {answer}\n"
+                        chat_log.append(response)
+
+                        break
+
+        elif "onboarding link" in prompt.lower():
+            print("https://forms.gle/rdXJxd4La4nM72Qj8")
+
+            # Append the response to the chat log
+            response = f"User: {prompt}\nAI: https://forms.gle/rdXJxd4La4nM72Qj8\n"
+            chat_log.append(response)
+
+        elif "stop" in prompt.lower():
+            # Output a goodbye message and stop the program
+            answer = "Goodbye!"
+            print("AI says:", answer)
+
+            # Append the response to the chat log
+            response = f"User: {prompt}\nAI: {answer}\n"
+            chat_log.append(response)
+
+            # Show the chat log to the user
+            print("\nChat Log:")
+            for entry in chat_log:
+                print(entry)
+
+            
+
+        else:
+            print("AI says: Invalid Response! Kindly try again.")
+
+            # Append the response to the chat log
+            response = f"User: {prompt}\nAI: Invalid Response! Kindly try again.\n"
+            chat_log.append(response)

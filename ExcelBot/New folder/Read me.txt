@@ -1,0 +1,16 @@
+There are two files.
+
+I. one is complete code file with the code of Audio output and ChatGPT replies.
+
+II. second is Excel bot, audio output and ChatGpt's integration is removed.
+
+--------------------------------
+Steps/ Instruction:-
+
+1. Create a google Onboarding form. (https://forms.gle/rdXJxd4La4nM72Qj8)
+
+2. Go to the responses and copy the link. (https://docs.google.com/spreadsheets/d/1On7Zf8Q5GD-0ReKGYndJNbLMbt_a4yEn8OqKjMXBeQ8/edit?usp=sharing)
+
+3. Paste this responses link to the code in line 8.
+
+4. Now you can run the ExcelBot.
